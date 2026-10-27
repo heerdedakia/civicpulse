@@ -7,7 +7,8 @@ const adminManager = {
   activeAdminIssues: [],
 
   init() {
-    const adminForm = document.getElementById('adminStatusForm');
+    const adminStatusForm = document.getElementById('adminStatusForm');
+    const adminAssignForm = document.getElementById('adminAssignForm');
     const targetStatusSelect = document.getElementById('adminTargetStatus');
 
     if (targetStatusSelect) {
@@ -23,10 +24,17 @@ const adminManager = {
       });
     }
 
-    if (adminForm) {
-      adminForm.addEventListener('submit', (e) => {
+    if (adminStatusForm) {
+      adminStatusForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.submitStatusUpdate();
+      });
+    }
+
+    if (adminAssignForm) {
+      adminAssignForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.submitAssignment();
       });
     }
   },
@@ -70,7 +78,7 @@ const adminManager = {
             </td>
             <td><span style="font-size:0.8rem; color:#06b6d4;">${issue.category}</span></td>
             <td>
-              <span style="font-size:0.8rem; color:#e2e8f0;">${issue.assignedDepartment || 'Unassigned'}</span>
+              <span style="font-size:0.8rem; color:#e2e8f0; font-weight:600;">${issue.assignedDepartment || 'Unassigned'}</span>
               <small style="display:block; color:#64748b;">${issue.assignedOfficer || 'No officer'}</small>
             </td>
             <td>
@@ -84,9 +92,12 @@ const adminManager = {
               `}
             </td>
             <td>
-              <div style="display:flex; gap:6px;">
-                <button class="btn btn-xs btn-outline" onclick="adminManager.openStatusModal('${issue._id}', '${issue.status}')">
-                  Update Status
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn btn-xs btn-outline" onclick="adminManager.openAssignModal('${issue._id}', '${issue.assignedDepartment || ''}', '${issue.assignedOfficer || ''}', '${encodeURIComponent(issue.adminNotes || '')}')" title="Assign responsible department">
+                  Assign
+                </button>
+                <button class="btn btn-xs btn-warning" onclick="adminManager.openStatusModal('${issue._id}', '${issue.status}')" title="Update status and submit resolution proof">
+                  Status
                 </button>
                 <button class="btn btn-xs btn-cyan" onclick="detailsManager.openDetails('${issue._id}')">
                   View
@@ -98,6 +109,66 @@ const adminManager = {
       }).join('');
     } catch (err) {
       tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red p-4">Error loading admin records: ${err.message}</td></tr>`;
+    }
+  },
+
+  /**
+   * Opens Department Assignment modal
+   */
+  openAssignModal(issueId, currentDept = '', currentOfficer = '', currentNotesEncoded = '') {
+    const idInput = document.getElementById('adminAssignIssueId');
+    const deptSelect = document.getElementById('assignDepartmentSelect');
+    const officerInput = document.getElementById('assignOfficerInput');
+    const notesInput = document.getElementById('assignNotesInput');
+
+    if (idInput) idInput.value = issueId;
+    if (deptSelect) deptSelect.value = currentDept && currentDept !== 'Unassigned' ? currentDept : '';
+    if (officerInput) officerInput.value = currentOfficer && currentOfficer !== 'Unassigned' ? currentOfficer : '';
+    if (notesInput) {
+      try {
+        notesInput.value = decodeURIComponent(currentNotesEncoded || '');
+      } catch (e) {
+        notesInput.value = currentNotesEncoded || '';
+      }
+    }
+
+    app.openModal('adminAssignModal');
+  },
+
+  /**
+   * Submits department assignment to backend
+   */
+  async submitAssignment() {
+    const issueId = document.getElementById('adminAssignIssueId')?.value;
+    const assignedDepartment = document.getElementById('assignDepartmentSelect')?.value;
+    const assignedOfficer = document.getElementById('assignOfficerInput')?.value.trim();
+    const adminNotes = document.getElementById('assignNotesInput')?.value.trim();
+
+    if (!assignedDepartment) {
+      app.showToast('Please select a responsible department.', 'error');
+      return;
+    }
+
+    try {
+      const res = await API.patch(`/admin/issues/${issueId}/assign`, {
+        assignedDepartment,
+        assignedOfficer: assignedOfficer || 'Designated Field Officer',
+        adminNotes
+      });
+
+      app.closeModal('adminAssignModal');
+      app.showToast(`Department assigned: ${assignedDepartment}`, 'success');
+
+      this.refreshAdminList();
+      issuesManager.loadIssues();
+      app.loadDashboardMetrics();
+
+      // Refresh open details modal if currently viewing this issue
+      if (detailsManager.activeIssueId === issueId) {
+        detailsManager.openDetails(issueId);
+      }
+    } catch (err) {
+      app.showToast('Failed to assign department: ' + err.message, 'error');
     }
   },
 
@@ -115,7 +186,7 @@ const adminManager = {
     if (notes) notes.value = '';
     if (comment) comment.value = '';
 
-    // Default select based on current status
+    // Populate permissible status transitions
     if (select) {
       if (currentStatus === 'Reported') select.value = 'Acknowledged';
       else if (currentStatus === 'Acknowledged') select.value = 'In Progress';
@@ -165,6 +236,10 @@ const adminManager = {
       this.refreshAdminList();
       issuesManager.loadIssues();
       app.loadDashboardMetrics();
+
+      if (detailsManager.activeIssueId === issueId) {
+        detailsManager.openDetails(issueId);
+      }
     } catch (err) {
       app.showToast(err.message, 'error');
     }

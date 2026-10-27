@@ -62,15 +62,19 @@
         </button>
       </nav>
 
-      <!-- Role Switcher & Demonstration Controls -->
+      <!-- Role Switcher & User Authentication -->
       <div class="user-controls">
-        <div class="role-pill" id="currentRoleBadge" title="Click to toggle Citizen / Administrator mode for viva demonstration">
+        <div class="role-pill" id="currentRoleBadge" title="Click to view account">
           <span class="role-indicator citizen"></span>
-          <span class="role-text" id="roleLabel">Citizen Mode</span>
+          <span class="role-text" id="roleLabel">Citizen</span>
           <span class="role-name" id="userNameLabel">Arjun Sharma</span>
         </div>
         <button class="btn btn-sm btn-outline" id="roleToggleBtn" title="Switch active role">
           Switch to Admin
+        </button>
+        <button class="btn btn-sm btn-cyan" id="authOpenBtn" title="Login or Register account">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="authBtnText">Login / Sign Up</span>
         </button>
         <button class="btn btn-sm btn-icon" id="resetDemoDataBtn" title="Reset and re-seed demo data">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
@@ -693,6 +697,155 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="app.closeModal('reopenDisputeModal')">Cancel</button>
           <button type="submit" class="btn btn-danger">Confirm Reopening</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Admin Department & Officer Assignment Modal -->
+  <div class="modal-overlay hidden" id="adminAssignModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-tag">Municipal Triage</span>
+          <h2 class="modal-title">Assign Department & Officer</h2>
+        </div>
+        <button class="modal-close-btn" onclick="app.closeModal('adminAssignModal')">&times;</button>
+      </div>
+
+      <form id="adminAssignForm" class="styled-form">
+        <div class="modal-body">
+          <input type="hidden" id="adminAssignIssueId">
+
+          <div class="form-group">
+            <label for="assignDepartmentSelect">Responsible Department <span class="required">*</span></label>
+            <select id="assignDepartmentSelect" class="form-select" required>
+              <option value="">Select Department</option>
+              <option value="Roads & Highways Department">Roads & Highways Department</option>
+              <option value="Water Supply & Sewerage Board">Water Supply & Sewerage Board</option>
+              <option value="Sanitation & Solid Waste Dept">Sanitation & Solid Waste Dept</option>
+              <option value="Electricity Board">Electricity Board</option>
+              <option value="Public Works Department">Public Works Department</option>
+              <option value="Drainage & Stormwater Wing">Drainage & Stormwater Wing</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="assignOfficerInput">Assigned Officer / Engineer Name</label>
+            <input type="text" id="assignOfficerInput" class="form-input" placeholder="e.g. Asst. Engineer Kumar, Inspector Santosh">
+          </div>
+
+          <div class="form-group">
+            <label for="assignNotesInput">Internal Work Order / Municipal Notes</label>
+            <textarea id="assignNotesInput" class="form-textarea" rows="3" placeholder="Inspection notes, crew dispatch details, materials allocated..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('adminAssignModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveAssignmentBtn">Save Department Assignment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. User Authentication Modal (Login & Sign Up) -->
+  <div class="modal-overlay hidden" id="authModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-tag">User Identity & Access</span>
+          <h2 class="modal-title" id="authModalTitle">Sign In to CivicPulse</h2>
+        </div>
+        <button class="modal-close-btn" onclick="app.closeModal('authModal')">&times;</button>
+      </div>
+
+      <!-- Auth Mode Tabs -->
+      <div style="display:flex; border-bottom:1px solid #334155; background-color:#0f172a;">
+        <button type="button" class="auth-tab-btn active" id="tabLoginBtn" onclick="app.switchAuthTab('login')">
+          Sign In
+        </button>
+        <button type="button" class="auth-tab-btn" id="tabRegisterBtn" onclick="app.switchAuthTab('register')">
+          Create Account
+        </button>
+      </div>
+
+      <!-- Tab 1: Login Form -->
+      <form id="loginForm" class="styled-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="loginEmail">Email Address <span class="required">*</span></label>
+            <input type="email" id="loginEmail" class="form-input" placeholder="you@domain.com" required>
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword">Password <span class="required">*</span></label>
+            <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required>
+          </div>
+
+          <!-- Quick Viva Demo Logins -->
+          <div style="margin-top:10px; padding:10px; background-color:rgba(14, 165, 233, 0.08); border-radius:6px; border:1px solid rgba(14, 165, 233, 0.2);">
+            <span style="font-size:0.75rem; color:#38bdf8; font-weight:700; display:block; margin-bottom:6px;">⚡ Quick Login (Pre-set Demo Accounts):</span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-xs btn-outline" onclick="app.quickFillLogin('arjun.citizen@civicpulse.org', 'citizen123')">
+                Citizen: Arjun Sharma
+              </button>
+              <button type="button" class="btn btn-xs btn-cyan" onclick="app.quickFillLogin('priya.nair@municipal.gov.in', 'admin123')">
+                Admin: Priya Nair
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('authModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="loginSubmitBtn">Sign In</button>
+        </div>
+      </form>
+
+      <!-- Tab 2: Register Form (Hidden by default) -->
+      <form id="registerForm" class="styled-form hidden">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="regName">Full Name <span class="required">*</span></label>
+            <input type="text" id="regName" class="form-input" placeholder="e.g. Ramesh Kumar" required minlength="2">
+          </div>
+
+          <div class="form-group">
+            <label for="regEmail">Email Address <span class="required">*</span></label>
+            <input type="email" id="regEmail" class="form-input" placeholder="ramesh@example.com" required>
+          </div>
+
+          <div class="form-group">
+            <label for="regPassword">Password <span class="required">*</span></label>
+            <input type="password" id="regPassword" class="form-input" placeholder="At least 6 characters" required minlength="6">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="regRole">Account Role <span class="required">*</span></label>
+              <select id="regRole" class="form-select" required onchange="app.handleRegRoleChange(this.value)">
+                <option value="citizen" selected>Citizen Reporter</option>
+                <option value="admin">Municipal Administrator / Officer</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="regDeptGroup" style="display:none;">
+              <label for="regDept">Department</label>
+              <select id="regDept" class="form-select">
+                <option value="Roads & Highways Department">Roads & Highways Department</option>
+                <option value="Water Supply & Sewerage Board">Water Supply & Sewerage Board</option>
+                <option value="Sanitation & Solid Waste Dept">Sanitation & Solid Waste Dept</option>
+                <option value="Electricity Board">Electricity Board</option>
+                <option value="Public Works Department" selected>Public Works Department</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('authModal')">Cancel</button>
+          <button type="submit" class="btn btn-success" id="registerSubmitBtn">Create Account</button>
         </div>
       </form>
     </div>

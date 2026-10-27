@@ -80,8 +80,29 @@ const detailsManager = {
           </div>
           <div>
             <span style="color:#94a3b8; font-size:0.75rem; display:block;">Department In-Charge</span>
-            <strong style="color:#f8fafc;">🏢 ${issue.assignedDepartment || 'Unassigned'}</strong>
+            <strong style="color:#f8fafc;">🏢 ${issue.assignedDepartment && issue.assignedDepartment !== 'Unassigned' ? issue.assignedDepartment : '<span style="color:#f59e0b;">Unassigned</span>'}</strong>
             <small style="color:#64748b; display:block;">Officer: ${issue.assignedOfficer || 'Not assigned'}</small>
+            <button class="btn btn-xs btn-outline" style="margin-top:6px;" onclick="adminManager.openAssignModal('${issue._id}', '${issue.assignedDepartment || ''}', '${issue.assignedOfficer || ''}', '${encodeURIComponent(issue.adminNotes || '')}')">
+              ✏️ Assign Dept & Officer
+            </button>
+          </div>
+        </div>
+
+        <!-- Admin Quick Actions Bar -->
+        <div style="background-color:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.25); border-radius:8px; padding:12px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>
+              <strong style="color:#f59e0b; font-size:0.85rem; display:block;">Administrative Operations:</strong>
+              <span style="font-size:0.75rem; color:#94a3b8;">Assign responsible department or submit resolution evidence for citizen sign-off.</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-xs btn-outline" onclick="adminManager.openAssignModal('${issue._id}', '${issue.assignedDepartment || ''}', '${issue.assignedOfficer || ''}', '${encodeURIComponent(issue.adminNotes || '')}')">
+                Assign Dept
+              </button>
+              <button class="btn btn-xs btn-warning" onclick="adminManager.openStatusModal('${issue._id}', '${issue.status}')">
+                Update Status / Submit Fix Proof
+              </button>
+            </div>
           </div>
         </div>
 
@@ -144,7 +165,16 @@ const detailsManager = {
               </button>
             </div>
           </div>
-        ` : ''}
+        ` : issue.status !== 'Resolved' ? `
+          <div style="background-color:rgba(15, 23, 42, 0.6); border:1px dashed #334155; border-radius:8px; padding:12px; margin:16px 0; font-size:0.75rem; color:#94a3b8;">
+            <strong style="color:#06b6d4; display:block; margin-bottom:3px;">ℹ️ How this case gets marked as SOLVED:</strong>
+            An administrator cannot simply click "Resolved". Once field repairs are completed, the admin submits remediation notes and after-photo proof, transitioning the case to <em>"Awaiting Verification"</em>. The citizen reporter then inspects the evidence and clicks <em>"Verify & Approve"</em> to officially mark it <strong>Resolved</strong>!
+          </div>
+        ` : `
+          <div style="background-color:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.3); border-radius:8px; padding:12px; margin:16px 0; font-size:0.8rem; color:#a7f3d0;">
+            <strong>✓ Verified & Successfully Resolved:</strong> This complaint was physically inspected and approved by citizen verifier (${issue.resolutionEvidence?.verifiedBy || 'Citizen Reporter'}). Case closed.
+          </div>
+        `}
 
         <!-- Status History Audit Timeline -->
         <div style="margin-top:24px;">

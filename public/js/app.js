@@ -1,6 +1,6 @@
 /**
  * CIVICPULSE — CORE APPLICATION CONTROLLER
- * Single-Page Application router, session coordinator, and dashboard metrics manager
+ * Single-Page Application router, session coordinator, authentication and metrics manager
  */
 
 const app = {
@@ -18,10 +18,20 @@ const app = {
   async init() {
     console.log('[CivicPulse] Initializing client application...');
 
+    // Load persisted session if exists
+    try {
+      const stored = localStorage.getItem('civicpulse_current_user');
+      if (stored) {
+        this.currentUser = JSON.parse(stored);
+      }
+    } catch (e) {}
+
     // Initialize sub-modules
     this.setupNavigation();
     this.setupRoleControls();
+    this.setupAuthHandlers();
     this.setupMobileMenu();
+    this.updateRoleUI();
 
     if (typeof issuesManager !== 'undefined') issuesManager.init();
     if (typeof reportManager !== 'undefined') reportManager.init();
@@ -105,6 +115,7 @@ const app = {
         try {
           const res = await API.post('/auth/demo-switch', { role: nextRole });
           this.currentUser = res.user;
+          this.persistUser(this.currentUser);
           this.updateRoleUI();
           this.showToast(`Switched to ${this.currentUser.role.toUpperCase()} mode (${this.currentUser.name})`, 'info');
         } catch (err) {
@@ -131,6 +142,113 @@ const app = {
   },
 
   /**
+   * Authentication & Account Handlers
+   */
+  setupAuthHandlers() {
+    const authOpenBtn = document.getElementById('authOpenBtn');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+
+    if (authOpenBtn) {
+      authOpenBtn.addEventListener('click', () => {
+        this.openModal('authModal');
+      });
+    }
+
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail')?.value.trim();
+        const password = document.getElementById('loginPassword')?.value;
+
+        try {
+          const res = await API.post('/auth/login', { email, password });
+          this.currentUser = res.user;
+          this.persistUser(this.currentUser);
+          this.closeModal('authModal');
+          this.updateRoleUI();
+          this.showToast(`Welcome back, ${this.currentUser.name}! (${this.currentUser.role.toUpperCase()})`, 'success');
+
+          if (this.currentUser.role === 'admin') {
+            this.navigateTo('admin');
+          }
+        } catch (err) {
+          this.showToast(err.message, 'error');
+        }
+      });
+    }
+
+    if (registerForm) {
+      registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('regName')?.value.trim();
+        const email = document.getElementById('regEmail')?.value.trim();
+        const password = document.getElementById('regPassword')?.value;
+        const role = document.getElementById('regRole')?.value;
+        const department = document.getElementById('regDept')?.value;
+
+        try {
+          const res = await API.post('/auth/register', { name, email, password, role, department });
+          this.currentUser = res.user;
+          this.persistUser(this.currentUser);
+          this.closeModal('authModal');
+          this.updateRoleUI();
+          this.showToast(`Account created! Logged in as ${this.currentUser.name} (${this.currentUser.role.toUpperCase()})`, 'success');
+
+          if (this.currentUser.role === 'admin') {
+            this.navigateTo('admin');
+          }
+        } catch (err) {
+          this.showToast(err.message, 'error');
+        }
+      });
+    }
+  },
+
+  switchAuthTab(tab) {
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const tabLoginBtn = document.getElementById('tabLoginBtn');
+    const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+    const title = document.getElementById('authModalTitle');
+
+    if (tab === 'login') {
+      loginForm.classList.remove('hidden');
+      registerForm.classList.add('hidden');
+      tabLoginBtn.classList.add('active');
+      tabRegisterBtn.classList.remove('active');
+      if (title) title.textContent = 'Sign In to CivicPulse';
+    } else {
+      loginForm.classList.add('hidden');
+      registerForm.classList.remove('hidden');
+      tabLoginBtn.classList.remove('active');
+      tabRegisterBtn.classList.add('active');
+      if (title) title.textContent = 'Create a New Account';
+    }
+  },
+
+  quickFillLogin(email, password) {
+    const emailInput = document.getElementById('loginEmail');
+    const passwordInput = document.getElementById('loginPassword');
+    if (emailInput) emailInput.value = email;
+    if (passwordInput) passwordInput.value = password;
+    this.showToast('Demo credentials filled. Click "Sign In"!', 'info');
+  },
+
+  handleRegRoleChange(role) {
+    const deptGroup = document.getElementById('regDeptGroup');
+    if (deptGroup) {
+      deptGroup.style.display = role === 'admin' ? 'flex' : 'none';
+    }
+  },
+
+  persistUser(user) {
+    try {
+      localStorage.setItem('civicpulse_current_user', JSON.stringify(user));
+    } catch (e) {}
+  },
+
+  /**
    * Synchronizes user interface with active session role
    */
   updateRoleUI() {
@@ -139,9 +257,10 @@ const app = {
     const roleIndicator = document.querySelector('.role-indicator');
     const roleToggleBtn = document.getElementById('roleToggleBtn');
     const adminNavTab = document.getElementById('navAdminTab');
+    const authBtnText = document.getElementById('authBtnText');
 
     if (this.currentUser.role === 'admin') {
-      if (roleLabel) roleLabel.textContent = 'Admin Mode';
+      if (roleLabel) roleLabel.textContent = 'Admin';
       if (userNameLabel) userNameLabel.textContent = this.currentUser.name;
       if (roleIndicator) {
         roleIndicator.className = 'role-indicator admin';
@@ -149,7 +268,7 @@ const app = {
       if (roleToggleBtn) roleToggleBtn.textContent = 'Switch to Citizen';
       if (adminNavTab) adminNavTab.style.display = 'flex';
     } else {
-      if (roleLabel) roleLabel.textContent = 'Citizen Mode';
+      if (roleLabel) roleLabel.textContent = 'Citizen';
       if (userNameLabel) userNameLabel.textContent = this.currentUser.name;
       if (roleIndicator) {
         roleIndicator.className = 'role-indicator citizen';
@@ -157,10 +276,13 @@ const app = {
       if (roleToggleBtn) roleToggleBtn.textContent = 'Switch to Admin';
       if (adminNavTab) adminNavTab.style.display = 'none';
 
-      // If citizen was on admin tab, return to dashboard
       if (this.activeTab === 'admin') {
         this.navigateTo('dashboard');
       }
+    }
+
+    if (authBtnText) {
+      authBtnText.textContent = `Account (${this.currentUser.role})`;
     }
   },
 
