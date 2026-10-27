@@ -1,0 +1,28 @@
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database data files
+data/
+*.wt
+*.bson
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# Uploaded user images
+public/uploads/*
+!public/uploads/.gitkeep
+
+# System logs
+*.log
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+.nyc_output/

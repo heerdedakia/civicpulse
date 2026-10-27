@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicPulse — Community Issue Intelligence</title>
+  <meta name="description" content="Evidence-based civic grievance resolution platform with duplicate detection and recurring hotspot intelligence.">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS for Interactive Maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- CivicPulse Custom Stylesheet -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="theme-dark">
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Civic<span class="text-accent">Pulse</span></span>
+          <span class="brand-tagline">Issue Intelligence & Evidence Resolution</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-menu" id="navMenu">
+        <button class="nav-item active" data-tab="dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Overview
+        </button>
+        <button class="nav-item" data-tab="report">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Report Issue
+        </button>
+        <button class="nav-item" data-tab="issues">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Browse Issues
+        </button>
+        <button class="nav-item" data-tab="map-view">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          Interactive Map
+        </button>
+        <button class="nav-item" data-tab="hotspots">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/></svg>
+          Hotspots & Analytics
+        </button>
+        <button class="nav-item admin-only" data-tab="admin" id="navAdminTab">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Admin Console
+        </button>
+      </nav>
+
+      <!-- Role Switcher & Demonstration Controls -->
+      <div class="user-controls">
+        <div class="role-pill" id="currentRoleBadge" title="Click to toggle Citizen / Administrator mode for viva demonstration">
+          <span class="role-indicator citizen"></span>
+          <span class="role-text" id="roleLabel">Citizen Mode</span>
+          <span class="role-name" id="userNameLabel">Arjun Sharma</span>
+        </div>
+        <button class="btn btn-sm btn-outline" id="roleToggleBtn" title="Switch active role">
+          Switch to Admin
+        </button>
+        <button class="btn btn-sm btn-icon" id="resetDemoDataBtn" title="Reset and re-seed demo data">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        </button>
+      </div>
+
+      <!-- Mobile Hamburger Menu Button -->
+      <button class="mobile-toggle" id="mobileMenuBtn" aria-label="Toggle Navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Global Main Container -->
+  <main class="main-content">
+    
+    <!-- ======================================================== -->
+    <!-- SECTION 1: OVERVIEW DASHBOARD -->
+    <!-- ======================================================== -->
+    <section class="tab-pane active" id="pane-dashboard">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Community Issue Intelligence Dashboard</h1>
+          <p class="page-subtitle">Real-time municipal grievance tracking, verification audit trails, and recurrence analytics.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="app.navigateTo('report')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Report New Complaint
+          </button>
+        </div>
+      </div>
+
+      <!-- Key Metrics Counter Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon blue">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+          </div>
+          <div class="metric-info">
+            <span class="metric-label">Total Grievances</span>
+            <span class="metric-value" id="statTotalIssues">-</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon amber">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="metric-info">
+            <span class="metric-label">Active / In Progress</span>
+            <span class="metric-value" id="statActiveIssues">-</span>
+          </div>
+        </div>
+
+        <div class="metric-card highlight-card">
+          <div class="metric-icon cyan">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="metric-info">
+            <span class="metric-label">Awaiting Verification</span>
+            <span class="metric-value text-cyan" id="statAwaitingVerification">-</span>
+            <small class="metric-tip">Requires reporter approval</small>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon green">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <div class="metric-info">
+            <span class="metric-label">Verified Resolved</span>
+            <span class="metric-value text-green" id="statResolvedIssues">-</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon red">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="metric-info">
+            <span class="metric-label">Citizen Reopened</span>
+            <span class="metric-value text-red" id="statReopenedIssues">-</span>
+            <small class="metric-tip">Resolution rejected</small>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon purple">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+          </div>
+          <div class="metric-info">
+            <span class="metric-label">Identified Hotspots</span>
+            <span class="metric-value text-purple" id="statHotspotCount">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Overview Content Columns -->
+      <div class="overview-grid">
+        <!-- Left: Evidence Verification Notice Banner & Urgent Issues -->
+        <div class="overview-col-main">
+          <!-- Evidence Verification Callout -->
+          <div class="verification-callout-card" id="verificationBanner">
+            <div class="callout-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="callout-content">
+              <h3>Evidence-Based Resolution Active</h3>
+              <p>Municipal officers cannot mark complaints resolved without uploading proof. Citizens hold the authority to inspect evidence, sign-off on the resolution, or reopen unsatisfactory work.</p>
+            </div>
+            <button class="btn btn-sm btn-cyan" onclick="issuesManager.filterByStatus('Awaiting Verification')">
+              Review Pending Proofs
+            </button>
+          </div>
+
+          <!-- High Priority Complaints Queue -->
+          <div class="content-box">
+            <div class="box-header">
+              <h2 class="box-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Highest Priority Grievances
+              </h2>
+              <button class="btn btn-link" onclick="app.navigateTo('issues')">View All Issues →</button>
+            </div>
+            <div class="issues-list-container" id="dashboardPriorityIssues">
+              <div class="loading-state">
+                <div class="spinner"></div>
+                <span>Loading priority queue...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Mini Quick Stats & Core Differentiator Explanation -->
+        <div class="overview-col-side">
+          <div class="content-box">
+            <div class="box-header">
+              <h2 class="box-title">System Architecture</h2>
+            </div>
+            <div class="architecture-pills">
+              <div class="arch-item">
+                <span class="arch-badge">Alg. 1</span>
+                <div>
+                  <strong>Haversine & Keyword Overlap</strong>
+                  <p>Detects duplicates by calculating geospatial distance and Jaccard token similarity before submission.</p>
+                </div>
+              </div>
+              <div class="arch-item">
+                <span class="arch-badge">Alg. 2</span>
+                <div>
+                  <strong>Dynamic Priority Formula</strong>
+                  <p>Scores issues (0-100) combining severity, hazard category weight, citizen endorsements, age, and reopen status.</p>
+                </div>
+              </div>
+              <div class="arch-item">
+                <span class="arch-badge">Alg. 3</span>
+                <div>
+                  <strong>Spatial Hotspot Clustering</strong>
+                  <p>Groups complaints within 350m radius by category to highlight chronic infrastructure failure points.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions Panel -->
+          <div class="content-box">
+            <div class="box-header">
+              <h2 class="box-title">Quick Actions</h2>
+            </div>
+            <div class="quick-links-grid">
+              <button class="quick-action-btn" onclick="app.navigateTo('report')">
+                <span class="icon">📍</span>
+                <span>Report Grievance with Map</span>
+              </button>
+              <button class="quick-action-btn" onclick="app.navigateTo('map-view')">
+                <span class="icon">🗺️</span>
+                <span>Explore City Heatmap</span>
+              </button>
+              <button class="quick-action-btn" onclick="app.navigateTo('hotspots')">
+                <span class="icon">📊</span>
+                <span>View Analytics & Charts</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 2: REPORT AN ISSUE -->
+    <!-- ======================================================== -->
+    <section class="tab-pane" id="pane-report">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Submit a Civic Complaint</h1>
+          <p class="page-subtitle">Report local municipal problems. System automatically checks for duplicates and computes priority.</p>
+        </div>
+      </div>
+
+      <div class="report-layout">
+        <!-- Left: Submission Form -->
+        <div class="report-form-container">
+          <form id="issueReportForm" class="styled-form" novalidate>
+            <div class="form-group">
+              <label for="reportTitle">Issue Title <span class="required">*</span></label>
+              <input type="text" id="reportTitle" name="title" class="form-input" placeholder="e.g. Hazardous Deep Pothole on 100ft Road" required minlength="5" maxlength="120">
+              <small class="form-help">Concise summary of the civic defect.</small>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="reportCategory">Category <span class="required">*</span></label>
+                <select id="reportCategory" name="category" class="form-select" required>
+                  <option value="">Select Category</option>
+                  <option value="Roads & Potholes">Roads & Potholes</option>
+                  <option value="Garbage & Sanitation">Garbage & Sanitation</option>
+                  <option value="Street Lighting">Street Lighting</option>
+                  <option value="Water & Leakage">Water & Leakage</option>
+                  <option value="Drainage & Sewage">Drainage & Sewage</option>
+                  <option value="Public Infrastructure">Public Infrastructure</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="reportSeverity">Citizen Assessed Severity <span class="required">*</span></label>
+                <select id="reportSeverity" name="severity" class="form-select" required>
+                  <option value="Low">Low (Minor inconvenience)</option>
+                  <option value="Medium" selected>Medium (Noticeable obstruction)</option>
+                  <option value="High">High (Potential accident/hazard)</option>
+                  <option value="Critical">Critical (Immediate danger to life/property)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="reportAddress">Location / Landmark Address <span class="required">*</span></label>
+              <input type="text" id="reportAddress" name="address" class="form-input" placeholder="Street name, landmark, ward number" required>
+              <small class="form-help">Click on the interactive map on the right to auto-pin exact coordinates.</small>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="reportLat">Latitude <span class="required">*</span></label>
+                <input type="number" step="any" id="reportLat" name="latitude" class="form-input" placeholder="12.9716" required>
+              </div>
+              <div class="form-group">
+                <label for="reportLon">Longitude <span class="required">*</span></label>
+                <input type="number" step="any" id="reportLon" name="longitude" class="form-input" placeholder="77.5946" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="reportDescription">Detailed Description <span class="required">*</span></label>
+              <textarea id="reportDescription" name="description" class="form-textarea" rows="4" placeholder="Describe the physical condition, approximate dimensions, risks to commuters, and duration of the problem..." required minlength="10" maxlength="2000"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Attach Photo Evidence (Optional)</label>
+              <div class="file-upload-box" id="fileUploadBox">
+                <input type="file" id="reportImage" name="image" accept="image/png, image/jpeg, image/webp" class="file-input">
+                <div class="upload-placeholder">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <span>Click to choose photo or drag & drop</span>
+                  <small>PNG, JPG, WEBP up to 5MB</small>
+                </div>
+                <div class="upload-preview hidden" id="uploadPreview">
+                  <img id="previewImageElement" src="" alt="Selected photo preview">
+                  <button type="button" class="btn btn-xs btn-danger" id="removeImageBtn">Remove</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-outline" id="checkDuplicateBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Pre-check Duplicates
+              </button>
+              <button type="submit" class="btn btn-primary" id="submitReportBtn">
+                Submit Civic Complaint
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right: Map Pinpoint Picker -->
+        <div class="report-map-container">
+          <div class="map-picker-card">
+            <div class="map-picker-header">
+              <span class="picker-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Pinpoint Incident Location
+              </span>
+              <button type="button" class="btn btn-xs btn-outline" id="useCurrentLocationBtn">
+                Use My Location
+              </button>
+            </div>
+            <div id="pickerMap" class="picker-map-canvas"></div>
+            <div class="map-picker-footer">
+              <span id="pickerCoordsLabel">Click anywhere on the map to set coordinates</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 3: BROWSE AND FILTER ISSUES -->
+    <!-- ======================================================== -->
+    <section class="tab-pane" id="pane-issues">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Municipal Grievance Registry</h1>
+          <p class="page-subtitle">Browse community reports, filter by ward/category, and track status transitions in real-time.</p>
+        </div>
+      </div>
+
+      <!-- Search and Filter Bar -->
+      <div class="filters-toolbar">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" placeholder="Search by title, description, or landmark address..." class="search-input">
+        </div>
+
+        <div class="filter-controls">
+          <select id="filterCategory" class="filter-select">
+            <option value="All">All Categories</option>
+            <option value="Roads & Potholes">Roads & Potholes</option>
+            <option value="Garbage & Sanitation">Garbage & Sanitation</option>
+            <option value="Street Lighting">Street Lighting</option>
+            <option value="Water & Leakage">Water & Leakage</option>
+            <option value="Drainage & Sewage">Drainage & Sewage</option>
+            <option value="Public Infrastructure">Public Infrastructure</option>
+          </select>
+
+          <select id="filterStatus" class="filter-select">
+            <option value="All">All Statuses</option>
+            <option value="Reported">Reported</option>
+            <option value="Acknowledged">Acknowledged</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Awaiting Verification">Awaiting Verification</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Reopened">Reopened</option>
+          </select>
+
+          <select id="filterSeverity" class="filter-select">
+            <option value="All">All Severities</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+
+          <select id="sortOrder" class="filter-select">
+            <option value="priority">Sort by Priority (Highest)</option>
+            <option value="newest">Sort by Date (Newest)</option>
+            <option value="oldest">Sort by Date (Oldest)</option>
+            <option value="upvotes">Sort by Endorsements</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Issues Grid -->
+      <div class="issues-grid" id="issuesGrid">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Loading grievance records...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 4: INTERACTIVE MAP VIEW -->
+    <!-- ======================================================== -->
+    <section class="tab-pane" id="pane-map-view">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Interactive Geospatial Map</h1>
+          <p class="page-subtitle">Explore complaints across municipal zones. Pin colors represent current status and priority tiers.</p>
+        </div>
+        <div class="map-legend">
+          <span class="legend-item"><span class="legend-dot status-reported"></span> Reported</span>
+          <span class="legend-item"><span class="legend-dot status-progress"></span> In Progress</span>
+          <span class="legend-item"><span class="legend-dot status-verification"></span> Awaiting Verification</span>
+          <span class="legend-item"><span class="legend-dot status-resolved"></span> Resolved</span>
+          <span class="legend-item"><span class="legend-dot status-reopened"></span> Reopened</span>
+        </div>
+      </div>
+
+      <div class="map-view-wrapper">
+        <div id="fullMap" class="full-map-canvas"></div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 5: HOTSPOTS AND ANALYTICS -->
+    <!-- ======================================================== -->
+    <section class="tab-pane" id="pane-hotspots">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Analytics & Recurring Hotspot Intelligence</h1>
+          <p class="page-subtitle">Algorithmic clustering reveals recurring defect areas and performance metrics for civic departments.</p>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Status Distribution</h3>
+            <span class="chart-tag">Real-time Data</span>
+          </div>
+          <div class="chart-body">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Complaints by Category</h3>
+            <span class="chart-tag">Department Breakdown</span>
+          </div>
+          <div class="chart-body">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hotspot Clusters Section -->
+      <div class="content-box">
+        <div class="box-header">
+          <div>
+            <h2 class="box-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+              Detected Recurring Hotspots
+            </h2>
+            <p class="box-subtitle">Locations where multiple complaints within 350 meters share the same category, signaling systemic infrastructure issues.</p>
+          </div>
+        </div>
+
+        <div class="hotspots-grid" id="hotspotsContainer">
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <span>Analyzing spatial clusters...</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 6: ADMINISTRATOR DASHBOARD -->
+    <!-- ======================================================== -->
+    <section class="tab-pane" id="pane-admin">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Municipal Administrator Operations</h1>
+          <p class="page-subtitle">Assign work orders, dispatch field crews, update status, and submit evidence for verification.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" onclick="adminManager.refreshAdminList()">
+            Refresh Queue
+          </button>
+        </div>
+      </div>
+
+      <!-- Admin Issues Table -->
+      <div class="content-box">
+        <div class="table-responsive">
+          <table class="styled-table" id="adminTable">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Issue Details</th>
+                <th>Category</th>
+                <th>Department</th>
+                <th>Current Status</th>
+                <th>Duplicates</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminTableBody">
+              <tr>
+                <td colspan="7" class="text-center">Loading administrative queue...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODALS -->
+  <!-- ======================================================== -->
+
+  <!-- 1. Issue Details & Status History Modal -->
+  <div class="modal-overlay hidden" id="issueDetailsModal">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <span class="modal-tag" id="modalCategoryTag">-</span>
+          <h2 class="modal-title" id="modalIssueTitle">Issue Title</h2>
+        </div>
+        <button class="modal-close-btn" onclick="app.closeModal('issueDetailsModal')">&times;</button>
+      </div>
+
+      <div class="modal-body" id="modalIssueBody">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Duplicate Detection Warning Modal -->
+  <div class="modal-overlay hidden" id="duplicateWarningModal">
+    <div class="modal-card">
+      <div class="modal-header warning">
+        <div class="header-icon-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <h2 class="modal-title">Potential Duplicate Detected</h2>
+          <p class="modal-subtitle">Our duplicate detection algorithm identified existing complaint(s) nearby.</p>
+        </div>
+        <button class="modal-close-btn" onclick="app.closeModal('duplicateWarningModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="text-secondary mb-3">Submitting duplicate complaints fragments municipal resources. You can review the existing report below or choose to endorse it instead:</p>
+        <div class="duplicate-matches-list" id="duplicateMatchesList"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="app.closeModal('duplicateWarningModal')">
+          Cancel & Edit
+        </button>
+        <button type="button" class="btn btn-warning" id="confirmSubmitAnywayBtn">
+          Submit Anyway as New Complaint
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Admin Status Update & Evidence Submission Modal -->
+  <div class="modal-overlay hidden" id="adminStatusModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-tag">Workflow State Machine</span>
+          <h2 class="modal-title">Update Status & Resolution Evidence</h2>
+        </div>
+        <button class="modal-close-btn" onclick="app.closeModal('adminStatusModal')">&times;</button>
+      </div>
+
+      <form id="adminStatusForm" class="styled-form">
+        <div class="modal-body">
+          <input type="hidden" id="adminUpdateIssueId">
+
+          <div class="form-group">
+            <label for="adminTargetStatus">Proposed Status <span class="required">*</span></label>
+            <select id="adminTargetStatus" class="form-select" required>
+              <option value="Acknowledged">Acknowledged (Accept for review)</option>
+              <option value="In Progress">In Progress (Dispatch crew)</option>
+              <option value="Awaiting Verification">Awaiting Verification (Submit fix proof for citizen approval)</option>
+            </select>
+            <small class="form-help text-cyan">Note: An administrator cannot directly mark "Resolved". You must submit resolution evidence for citizen sign-off.</small>
+          </div>
+
+          <!-- Section shown when moving to Awaiting Verification -->
+          <div id="evidenceFormGroup" class="evidence-upload-section">
+            <div class="form-group">
+              <label for="adminResolutionNotes">Resolution Description & Remediation Work <span class="required">*</span></label>
+              <textarea id="adminResolutionNotes" class="form-textarea" rows="3" placeholder="Describe the remediation work conducted, machinery/materials used, and current condition..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="adminEvidenceFile">After-Resolution Photo Proof (Optional)</label>
+              <input type="file" id="adminEvidenceFile" accept="image/png, image/jpeg, image/webp" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="adminComment">Audit Log Note</label>
+            <input type="text" id="adminComment" class="form-input" placeholder="Optional audit trail note...">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('adminStatusModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveAdminStatusBtn">Commit Status Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Citizen Rejection & Reopen Modal -->
+  <div class="modal-overlay hidden" id="reopenDisputeModal">
+    <div class="modal-card">
+      <div class="modal-header danger">
+        <div class="header-icon-box danger">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
+        <div>
+          <h2 class="modal-title">Reject Resolution & Reopen Complaint</h2>
+          <p class="modal-subtitle">Explain why the municipal remediation is unsatisfactory.</p>
+        </div>
+        <button class="modal-close-btn" onclick="app.closeModal('reopenDisputeModal')">&times;</button>
+      </div>
+
+      <form id="reopenDisputeForm" class="styled-form">
+        <div class="modal-body">
+          <input type="hidden" id="reopenIssueId">
+          <div class="form-group">
+            <label for="reopenReasonInput">Rejection Reason <span class="required">*</span></label>
+            <textarea id="reopenReasonInput" class="form-textarea" rows="4" placeholder="e.g. The pothole was only filled with loose gravel which washed away in last night's rain. Asphalt seal was not applied." required minlength="5"></textarea>
+            <small class="form-help">This explanation is appended to the public status audit log and escalates the priority score.</small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('reopenDisputeModal')">Cancel</button>
+          <button type="submit" class="btn btn-danger">Confirm Reopening</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- External Vendor Libraries -->
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- CivicPulse Application Modular Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/map.js"></script>
+  <script src="/js/charts.js"></script>
+  <script src="/js/issues.js"></script>
+  <script src="/js/report.js"></script>
+  <script src="/js/details.js"></script>
+  <script src="/js/admin.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
