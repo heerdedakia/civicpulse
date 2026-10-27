@@ -5,19 +5,22 @@ const mongoose = require('mongoose');
  * Transparently handles connection retry and logs status
  */
 async function connectDB() {
+  // If running on Vercel without a remote MongoDB Atlas URI, use in-memory store
+  if (process.env.VERCEL && (!process.env.MONGODB_URI || process.env.MONGODB_URI.includes('127.0.0.1') || process.env.MONGODB_URI.includes('localhost'))) {
+    console.log('[MongoDB Vercel Note] No remote cloud MongoDB URI provided. Running with in-memory persistence.');
+    return null;
+  }
+
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/civicpulse';
   
   try {
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000 // Timeout after 5s if MongoDB daemon is not running
+      serverSelectionTimeoutMS: 2000 // Quick timeout so serverless doesn't hang
     });
     console.log(`[MongoDB Connected] Host: ${conn.connection.host}, DB: ${conn.connection.name}`);
     return conn;
   } catch (error) {
-    console.error(`[MongoDB Connection Error] ${error.message}`);
-    console.warn(`[MongoDB Warning] Could not connect to MongoDB at ${uri}.`);
-    console.warn(`[MongoDB Tip] Ensure MongoDB service is running (e.g. run 'mongod' or start MongoDB Windows Service).`);
-    // Do not crash the entire process so that informational endpoints / help can still be served
+    console.warn(`[MongoDB Warning] Could not connect to MongoDB at ${uri}. Running in-memory mode.`);
     return null;
   }
 }

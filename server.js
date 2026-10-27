@@ -112,4 +112,12 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = { app, startServer };
+// Connect DB lazily or on server start
+if (!process.env.VERCEL) {
+  connectDB().catch(() => {});
+}
+
+app.app = app;
+app.startServer = startServer;
+
+module.exports = app;
